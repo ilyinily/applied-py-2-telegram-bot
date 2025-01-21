@@ -3,16 +3,23 @@ from aiogram import Bot, Dispatcher
 from config import TOKEN
 from handlers import router
 from middlewares import LoggingMiddleware
+from fastapi import FastAPI
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 dp.include_routers(router)
 dp.message.middleware(LoggingMiddleware())
 
+app = FastAPI()
+
+@app.get("/")
+def root():
+    return {"message": "Welcome. This is merely a telegram bot. No API supported yet."}
 
 
 async def main():
     print("Бот запущен!")
+
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
