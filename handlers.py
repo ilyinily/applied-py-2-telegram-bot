@@ -3,7 +3,7 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 import aiohttp
-from states import Form
+from states import *
 
 
 router = Router()
@@ -46,6 +46,47 @@ async def handle_callbacks(callback_query):
     if callback_query.data == "btn2":
         await callback_query.message.reply("Button 2 Pressed")
 
+
+# FSM: ввод данных профиля
+@router.message(Command("profile"))
+async def profile_start(message: Message, state: FSMContext):
+    await message.reply("Укажите ваш вес в килограммах")
+    await state.set_state(Profile.weight)
+
+
+@router.message(Profile.weight)
+async def gather_weight(message: Message, state: FSMContext):
+    await state.update_data(weight=message.text)
+    await message.reply("А теперь ваш рост в сантиметрах")
+    await state.set_state(Profile.height)
+
+
+@router.message(Profile.height)
+async def gather_height(message: Message, state: FSMContext):
+    await state.update_data(height=message.text)
+    await message.reply("И возраст (в годах)")
+    await state.set_state(Profile.age)
+
+
+@router.message(Profile.age)
+async def gather_age(message: Message, state: FSMContext):
+    await state.update_data(age=message.text)
+    await message.reply("Сколько минут вы хотите тренироваться в день?")
+    await state.set_state(Profile.activity)
+
+
+@router.message(Profile.activity)
+async def gather_city(message: Message, state: FSMContext):
+    await state.update_data(activity=message.text)
+    await message.reply("В каком городе вы живёте?")
+    await state.set_state(Profile.city)
+
+@router.message(Profile.city)
+async def gather_activity(message: Message, state: FSMContext):
+    data = await state.get_data()
+    city = message.text
+    await message.reply(f"Привет! Вы предоставили следующую информацию: {data}, а город ваш {city}")
+    await state.clear()
 
 # FSM: диалог с пользователем
 @router.message(Command("form"))

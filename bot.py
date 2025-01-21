@@ -10,11 +10,11 @@ dp = Dispatcher()
 dp.include_routers(router)
 dp.message.middleware(LoggingMiddleware())
 
-app = FastAPI()
-
-@app.get("/")
-def root():
-    return {"message": "Welcome. This is merely a telegram bot. No API supported yet."}
+# app = FastAPI()
+#
+# @app.get("/")
+# def root():
+#     return {"message": "Welcome. This is merely a telegram bot. No API supported yet."}
 
 
 async def main():
