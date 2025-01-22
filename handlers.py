@@ -1,12 +1,17 @@
+from http.cookiejar import user_domain_match
+
 from aiogram import Router
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 import aiohttp
-from states import *
 
+from config import WEATHER_TOKEN
+from states import *
+import requests
 
 router = Router()
+user_profiles = []
 
 
 # Обработчик команды /start
@@ -81,12 +86,39 @@ async def gather_city(message: Message, state: FSMContext):
     await message.reply("В каком городе вы живёте?")
     await state.set_state(Profile.city)
 
+
 @router.message(Profile.city)
 async def gather_activity(message: Message, state: FSMContext):
+    await state.update_data(city=message.text)
+    user_id = message.from_user
     data = await state.get_data()
-    city = message.text
-    await message.reply(f"Привет! Вы предоставили следующую информацию: {data}, а город ваш {city}")
+    await message.reply(f"Спасибо! Вы предоставили следующую информацию: {data}.")
+    user_profiles[f"{user_id}"] = data
     await state.clear()
+
+
+async def todays_weather(user_id):
+    location_query = await requests.get(url="http://api.openweathermap.org/geo/1.0/direct",
+                                  params={'q': user_profiles[user_id],
+                                          'appid': WEATHER_TOKEN,
+                                          'limit': 5})
+    user_profiles[user_id]["city_lat"] = location_query.json()[0]["lat"]
+    user_profiles[user_id]["city_lon"] = location_query.json()[0]["lon"]
+    location_weather = await requests.get(url="https://api.openweathermap.org/data/2.5/weather",
+                                    params={"lat": user_profiles[user_id]["city_lat"],
+                                            "lon": user_profiles[user_id]["city_lon"],
+                                            "units": "metric",
+                                            "appid": WEATHER_TOKEN
+                                    })
+    user_profiles[user_id]["todays_weather"] = location_weather.json()["main"]["temp"]
+    print(f"For user {user_id} the weather today is {user_profiles[user_id]["todays_weather"]}")
+
+@router.message(Command("weather"))
+async def get_todays_weather(message: Message):
+    user_id = message.from_user
+    await todays_weather(user_id)
+    await message.reply(f"В вашей локации {user_profiles[user_id]["city"]} сегодня {user_profiles[user_id]["todays_weather"]}")
+
 
 # FSM: диалог с пользователем
 @router.message(Command("form"))
@@ -117,7 +149,3 @@ async def get_joke(message: Message):
         async with session.get("https://api.chucknorris.io/jokes/random") as response:
             joke = await response.json()
             await message.reply(joke["value"])
-
-
-
-
