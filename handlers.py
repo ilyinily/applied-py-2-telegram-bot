@@ -99,47 +99,47 @@ async def gather_activity(message: Message, state: FSMContext):
     data = await state.get_data()
     await message.reply(f"Спасибо! Вы предоставили следующую информацию: {data}.")
     user_profiles[user_id] = data
-    user_profiles[user_id]["water_goal"] = int(user_profiles[user_id]["weight"]) * 30
-    user_profiles[user_id]["base_calories"] = int(user_profiles[user_id]["weight"]) * 10 + int(
-        user_profiles[user_id]["height"]) * 6.25 - int(user_profiles[user_id]["age"]) * 5
-    user_profiles[user_id]["todays_activity"] = 0
-    user_profiles[user_id]["logged_water"] = 0
-    user_profiles[user_id]["logged_calories"] = 0
-    user_profiles[user_id]["burned_calories"] = 0
+    user_profiles[user_id]['water_goal'] = int(user_profiles[user_id]['weight']) * 30
+    user_profiles[user_id]['base_calories'] = int(user_profiles[user_id]['weight']) * 10 + int(
+        user_profiles[user_id]['height']) * 6.25 - int(user_profiles[user_id]['age']) * 5
+    user_profiles[user_id]['todays_activity'] = 0
+    user_profiles[user_id]['logged_water'] = 0
+    user_profiles[user_id]['logged_calories'] = 0
+    user_profiles[user_id]['burned_calories'] = 0
     await state.clear()
 
 
 async def todays_weather(user_id):
     location_query = requests.get(url="http://api.openweathermap.org/geo/1.0/direct",
-                                  params={'q': user_profiles[user_id]["city"],
+                                  params={'q': user_profiles[user_id]['city'],
                                           'appid': WEATHER_TOKEN,
                                           'limit': 5})
-    user_profiles[user_id]["city_lat"] = location_query.json()[0]["lat"]
-    user_profiles[user_id]["city_lon"] = location_query.json()[0]["lon"]
+    user_profiles[user_id]['city_lat'] = location_query.json()[0]['lat']
+    user_profiles[user_id]['city_lon'] = location_query.json()[0]['lon']
     location_weather = requests.get(url="https://api.openweathermap.org/data/2.5/weather",
-                                    params={"lat": user_profiles[user_id]["city_lat"],
-                                            "lon": user_profiles[user_id]["city_lon"],
+                                    params={"lat": user_profiles[user_id]['city_lat'],
+                                            "lon": user_profiles[user_id]['city_lon'],
                                             "units": "metric",
                                             "appid": WEATHER_TOKEN
                                             })
-    user_profiles[user_id]["todays_weather"] = location_weather.json()["main"]["temp"]
+    user_profiles[user_id]['todays_weather'] = location_weather.json()['main']['temp']
 
 
 @router.message(Command("weather"))
 async def get_todays_weather(message: Message):
     user_id = message.from_user.id
     await todays_weather(user_id)
-    # await message.reply(f"В вашей локации {user_profiles[user_id]["city"]} сегодня {user_profiles[user_id]["todays_weather"]}")
+    await message.reply(f"В вашей локации {user_profiles[user_id]['city']} сегодня {user_profiles[user_id]['todays_weather']}")
 
 
 @router.message(Command("water_amount"))
 async def calculate_todays_water_amount(message: Message):
     user_id = message.from_user.id
     await todays_weather(user_id)
-    user_profiles[user_id]["water_goal"] = user_profiles[user_id]["water_goal"] + (
-        500 if user_profiles[user_id]["todays_weather"] > 25 else 0) + 500 * (
-                                                               int(user_profiles[user_id]["todays_activity"]) // 30)
-    await message.reply(f"Сегодня вам рекомендуется выпить {user_profiles[user_id]["water_goal"]} мл воды")
+    user_profiles[user_id]['water_goal'] = user_profiles[user_id]['water_goal'] + (
+        500 if user_profiles[user_id]['todays_weather'] > 25 else 0) + 500 * (
+                                                               int(user_profiles[user_id]['todays_activity']) // 30)
+    await message.reply(f"Сегодня вам рекомендуется выпить {user_profiles[user_id]['water_goal']} мл воды")
 
 
 @router.message(Command("log_water"))
@@ -149,12 +149,12 @@ async def log_water(message: Message):
     check_if_number = bool(number_template.match(message.text[11:]))
     if check_if_number:
         water_to_record = int(message.text[11:])
-        user_profiles[user_id]["logged_water"] += water_to_record
-        if user_profiles[user_id]["logged_water"] >= user_profiles[user_id]["water_goal"]:
+        user_profiles[user_id]['logged_water'] += water_to_record
+        if user_profiles[user_id]['logged_water'] >= user_profiles[user_id]['water_goal']:
             await message.reply(f"Записал, выпито {message.text[11:]} мл воды. Дневная норма выполнена!")
         else:
             await message.reply(
-                f"Записал, выпито {message.text[11:]} мл воды. До выполнения сегодняшней нормы осталось выпить {user_profiles[user_id]["water_goal"] - user_profiles[user_id]["logged_water"]} мл.")
+                f"Записал, выпито {message.text[11:]} мл воды. До выполнения сегодняшней нормы осталось выпить {user_profiles[user_id]['water_goal'] - user_profiles[user_id]['logged_water']} мл.")
     else:
         await message.reply(
             f"Кажется, {message.text[11:]} не очень похоже на объём воды в миллилитрах, который можно употребить. Попробуйте заново.\n(Команда: /log_water XYZ, где XYZ - объём воды в миллилитрах для записи.")
@@ -186,13 +186,13 @@ async def gather_carbohydrates(message: Message, state: FSMContext):
     user_id = message.from_user.id
     await state.update_data(carbohydrates=int(message.text))
     data = await state.get_data()
-    calories = data["proteins"] * 4 + data["fats"] * 9 + data["carbohydrates"] * 4
-    user_profiles[user_id]["logged_calories"] += calories
-    await message.reply(f"Углеводов, получается, {message.text}. Тогда калорийность выходит {calories} ккал. Добавил к употреблённому объёму (сейчас {user_profiles[user_id]["logged_calories"]}) ккал.")
-    if user_profiles[user_id]["logged_calories"] <= user_profiles[user_id]["base_calories"]:
-        await message.reply(f"До запланированного объёма потребления калорий осталось {user_profiles[user_id]["base_calories"] - user_profiles[user_id]["logged_calories"]}.")
+    calories = data['proteins'] * 4 + data['fats'] * 9 + data['carbohydrates'] * 4
+    user_profiles[user_id]['logged_calories'] += calories
+    await message.reply(f"Углеводов, получается, {message.text}. Тогда калорийность выходит {calories} ккал. Добавил к употреблённому объёму (сейчас {user_profiles[user_id]['logged_calories']}) ккал.")
+    if user_profiles[user_id]['logged_calories'] <= user_profiles[user_id]['base_calories']:
+        await message.reply(f"До запланированного объёма потребления калорий осталось {user_profiles[user_id]['base_calories'] - user_profiles[user_id]['logged_calories']}.")
     else:
-        await message.reply(f"Запланированный объём потребления калорий превышен на {abs(user_profiles[user_id]["base_calories"] - user_profiles[user_id]["logged_calories"])}.")
+        await message.reply(f"Запланированный объём потребления калорий превышен на {abs(user_profiles[user_id]['base_calories'] - user_profiles[user_id]['logged_calories'])}.")
     await state.clear()
 
 
@@ -215,11 +215,11 @@ async def gather_add_water(message: Message, state: FSMContext):
     await state.update_data(train_length=int(message.text))
     user_id = message.from_user.id
     data = await state.get_data()
-    add_water = 200 * (data["train_length"] // 30)
-    await message.reply(f"За тренировку удалось сжечь {data["calories_per_minute"] * data["train_length"]} ккал. Рекомендуется дополнительно выпить {add_water} мл воды.\nЧтобы не забыть, я скорректирую планы по тратам калорий и потреблению воды на день.")
-    user_profiles[user_id]["burned_calories"] += (data["calories_per_minute"] * data["train_length"])
-    user_profiles[user_id]["base_calories"] += user_profiles[user_id]["burned_calories"]
-    user_profiles[user_id]["water_goal"] += add_water
+    add_water = 200 * (data['train_length'] // 30)
+    await message.reply(f"За тренировку удалось сжечь {data['calories_per_minute'] * data['train_length']} ккал. Рекомендуется дополнительно выпить {add_water} мл воды.\nЧтобы не забыть, я скорректирую планы по тратам калорий и потреблению воды на день.")
+    user_profiles[user_id]['burned_calories'] += (data['calories_per_minute'] * data['train_length'])
+    user_profiles[user_id]['base_calories'] += user_profiles[user_id]['burned_calories']
+    user_profiles[user_id]['water_goal'] += add_water
     await state.clear()
 
 
@@ -228,11 +228,11 @@ async def check_progress(message: Message):
     user_id = message.from_user.id
     await message.reply(f"Прогресс:\n"
                         f"Вода:\n"
-                        f"- Выпито: {user_profiles[user_id]["logged_water"]} мл\n"
-                        f"- Осталось: {user_profiles[user_id]["water_goal"] - user_profiles[user_id]["logged_water"]} мл\n"
+                        f"- Выпито: {user_profiles[user_id]['logged_water']} мл\n"
+                        f"- Осталось: {user_profiles[user_id]['water_goal'] - user_profiles[user_id]['logged_water']} мл\n"
                         f"Калории:\n"
-                        f"- Потреблено: {user_profiles[user_id]["logged_calories"]} из {user_profiles[user_id]["base_calories"]} ккал\n"
-                        f"- Сожжено: {user_profiles[user_id]["burned_calories"]} ккал\n"
-                        f"- Баланс: {user_profiles[user_id]["logged_calories"] - user_profiles[user_id]["burned_calories"]} ккал")
+                        f"- Потреблено: {user_profiles[user_id]['logged_calories']} из {user_profiles[user_id]['base_calories']} ккал\n"
+                        f"- Сожжено: {user_profiles[user_id]['burned_calories']} ккал\n"
+                        f"- Баланс: {user_profiles[user_id]['logged_calories'] - user_profiles[user_id]['burned_calories']} ккал")
 
 
