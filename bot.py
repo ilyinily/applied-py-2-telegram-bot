@@ -10,17 +10,6 @@ dp = Dispatcher()
 dp.include_routers(router)
 dp.message.middleware(LoggingMiddleware())
 
-def create_socket(host="localhost", port=12345):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((host,port))
-    s.listen(5)
-    print(f"Socket is listening on {host}:{port}")
-
-    while True:
-        c, addr = s.accept()
-        print(f"Got connection from {addr}")
-        c.send(b"Thank you for connecting")
-        c.close()
 
 async def main():
     print("Бот запущен!")
@@ -28,7 +17,6 @@ async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    create_socket()
     asyncio.run(main())
 
 

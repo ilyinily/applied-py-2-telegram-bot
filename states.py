@@ -1,8 +1,9 @@
 from aiogram.fsm.state import State, StatesGroup
 
-class Form(StatesGroup):
-    name = State()
-    age = State()
+class Food(StatesGroup):
+    proteins = State()
+    fats = State()
+    carbohydrates = State()
 
 
 class Profile(StatesGroup):
@@ -12,4 +13,8 @@ class Profile(StatesGroup):
     activity = State()
     city = State()
     calories_target = State()
+
+class Train(StatesGroup):
+    activity = State()
+    add_water = State()
 
