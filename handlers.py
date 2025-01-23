@@ -129,8 +129,7 @@ async def todays_weather(user_id):
 async def get_todays_weather(message: Message):
     user_id = message.from_user.id
     await todays_weather(user_id)
-    await message.reply(
-        f"В вашей локации {user_profiles[user_id]["city"]} сегодня {user_profiles[user_id]["todays_weather"]}")
+    # await message.reply(f"В вашей локации {user_profiles[user_id]["city"]} сегодня {user_profiles[user_id]["todays_weather"]}")
 
 
 @router.message(Command("water_amount"))
